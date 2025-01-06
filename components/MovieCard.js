@@ -28,7 +28,7 @@ const MovieCard = ({ movie }) => {
           <div className="p-4 text-center">
             <h2 className="text-xl font-semibold mb-2">{movie.seriesTitle}</h2>
             <p className="text-gray-600 text-sm">
-              {movie.overview.length > 150 ? `${movie.overview.substring(0, 150)}...` : movie.overview}
+              {movie.overview}
             </p>
           </div>
         </a>
