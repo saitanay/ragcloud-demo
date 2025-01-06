@@ -47,9 +47,13 @@ experience on both web and mobile platforms.
 
 <!-- Placeholder for Search Page Screenshot -->
 
-### Search Page
+### Search Page (DB Search)
 
 ![Search Page](/public/search.png)
+
+### Search Page (RagCloud Search)
+
+![Search Page](/public/search-rag.png)
 
 <!-- Placeholder for Movie Detail Page Screenshot -->
 
@@ -160,32 +164,44 @@ Follow these instructions to set up and run the project locally.
 
 ### Populating the Database
 
-1. **Using `movies.movies.json`**
+1.  **Using `movies.movies.json`**
 
-   The repository includes a `movies.movies.json` file containing sample movie
-   data. You can use this file to populate your MongoDB database.
+    The repository includes a `movies.movies.json` file containing sample movie
+    data. You can use this file to populate your MongoDB database.
 
-2. **Importing Data into MongoDB**
+2.  **Importing Data into MongoDB**
 
-   Use the following steps to import the JSON data into your MongoDB database:
+    Use the following steps to import the JSON data into your MongoDB database:
 
-   - **Install MongoDB Tools** (if not already installed):
+    - **Install MongoDB Tools** (if not already installed):
 
-     ```bash
-     # For macOS using Homebrew
-     brew tap mongodb/brew
-     brew install mongodb-database-tools
-     ```
+      ```bash
+      # For macOS using Homebrew
+      brew tap mongodb/brew
+      brew install mongodb-database-tools
+      ```
 
-   - **Import the JSON File:**
+    - **Import the JSON File:**
 
-     ```bash
-     mongoimport --uri "your_mongodb_connection_string" --collection movies --file path/to/movies.movies.json --jsonArray
-     ```
+      ```bash
+      mongoimport --uri "your_mongodb_connection_string" --collection movies --file path/to/movies.movies.json --jsonArray
+      ```
 
-     - Replace `"your_mongodb_connection_string"` with your actual MongoDB URI.
-     - Ensure the `movies.movies.json` file is correctly formatted as a JSON
-       array.
+      - Replace `"your_mongodb_connection_string"` with your actual MongoDB URI.
+      - Ensure the `movies.movies.json` file is correctly formatted as a JSON
+        array.
+
+3.  **Run Migration Script**
+    <!-- Link to "Source Data Import/mongodbinsert.js -->
+
+        Run the migration script to insert the data into the MongoDB database.
+
+        ```bash
+        node source-data-import/mongodbinsert.js
+        ```
+
+        - **Note:** Ensure your `.env.local` file includes the necessary environment
+          variables as shown above.
 
 ## Implementing RagCloud
 
@@ -234,152 +250,20 @@ Below is a guide on how to integrate RagCloud into your application.
 A one-time script is used to push data from MongoDB to RagCloud. Follow these
 steps to execute the script.
 
-1. **Ensure MongoDB is Populated**
+**Migration Script**
 
-   - Make sure your MongoDB database is populated with movie data, either by
-     importing `movies.movies.json` or adding data manually.
-
-2. **Create the Data Push Script**
-
-   - Create a new script file named `pushDataToRagCloud.js` in the root
-     directory.
-
-   ```javascript
-   // pushDataToRagCloud.js
-
-   const axios = require("axios");
-   const { MongoClient } = require("mongodb");
-   require("dotenv").config();
-
-   const uri = process.env.MONGODB_URI;
-   const ragcloudApiKey = process.env.RAGCLOUD_API_KEY;
-   const ragcloudBaseUrl =
-   	process.env.RAGCLOUD_API_BASE_URL || "https://ragcloud.io";
-   const datasetName = "Movies";
-
-   const client = new MongoClient(uri, {
-   	useNewUrlParser: true,
-   	useUnifiedTopology: true,
-   });
-
-   async function pushData() {
-   	try {
-   		await client.connect();
-   		const db = client.db("movies");
-   		const movies = await db.collection("movies").find({}).toArray();
-
-   		console.log(`Fetched ${movies.length} movies from MongoDB.`);
-
-   		// Push each movie to RagCloud
-   		for (const movie of movies) {
-   			const payload = {
-   				dataset: datasetName,
-   				data: {
-   					id: movie.id,
-   					movie_name: movie.seriesTitle,
-   					year: movie.releasedYear.toString(),
-   					genre: Array.isArray(movie.genre)
-   						? movie.genre.join(", ")
-   						: movie.genre,
-   					overview: movie.overview,
-   					director: movie.director,
-   					cast: Array.isArray(movie.stars)
-   						? movie.stars.join(", ")
-   						: movie.stars,
-   				},
-   			};
-
-   			try {
-   				const response = await axios.post(
-   					`${ragcloudBaseUrl}/api/addDataRecord`,
-   					payload,
-   					{
-   						headers: {
-   							"Content-Type": "application/json",
-   							Authorization: `Bearer ${ragcloudApiKey}`,
-   						},
-   					}
-   				);
-
-   				console.log(`Successfully added movie ID: ${movie.id}`);
-   			} catch (err) {
-   				console.error(
-   					`Failed to add movie ID: ${movie.id}`,
-   					err.response ? err.response.data : err.message
-   				);
-   			}
-   		}
-
-   		console.log("Data push to RagCloud completed.");
-   	} catch (error) {
-   		console.error("Error pushing data to RagCloud:", error.message);
-   	} finally {
-   		await client.close();
-   	}
-   }
-
-   pushData();
-   ```
-
-   ### **Explanation of the Script**
-
-   - **Dependencies:**
-
-     - **axios:** For making HTTP requests to RagCloud API.
-     - **mongodb:** For connecting to MongoDB and fetching movie data.
-     - **dotenv:** To load environment variables from `.env.local`.
-
-   - **Environment Variables:**
-
-     - Ensure your `.env.local` file includes:
-       ```env
-       MONGODB_URI=your_mongodb_connection_string
-       RAGCLOUD_API_KEY=your_ragcloud_api_key
-       RAGCLOUD_API_BASE_URL=https://ragcloud.io
-       ```
-
-   - **Script Workflow:**
-     1. **Connect to MongoDB:**
-        - Connects to the MongoDB database using the provided URI.
-     2. **Fetch Movies:**
-        - Retrieves all movies from the `movies` collection.
-     3. **Push Each Movie to RagCloud:**
-        - Iterates through each movie and formats the payload as required by
-          RagCloud's `/api/addDataRecord` endpoint.
-        - Sends a POST request for each movie.
-        - Logs success or failure for each movie.
-     4. **Close MongoDB Connection:**
-        - Ensures the database connection is closed after the operation.
-
-3. **Install Dependencies**
-
-   Ensure `axios`, `mongodb`, and `dotenv` are installed.
-
-   ```bash
-   npm install axios mongodb dotenv
-   # or
-   yarn add axios mongodb dotenv
-   ```
-
-4. **Run the Script**
-
-   Execute the script using Node.js.
-
-   ```bash
-   node pushDataToRagCloud.js
-   ```
-
-   <!-- Placeholder for Data Push Script Execution Screenshot -->
-
-   - **Note:** Ensure that your `.env.local` file includes the necessary
-     environment variables as shown above.
+```bash
+node source-data-import/ragcloudinsert.js
+```
 
 5. **Verify Data in RagCloud**
 
    - Log in to the RagCloud admin panel to verify that the "Movies" dataset has
      been populated correctly.
 
-   <!-- Placeholder for RagCloud Dataset Verification Screenshot -->
+   <!-- Image data-records.png-->
+
+   ![Data Records](public/data-records.png)
 
 ## Technologies Used
 
