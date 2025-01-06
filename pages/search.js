@@ -5,7 +5,7 @@ import SearchBar from '../components/SearchBar';
 import MovieCard from '../components/MovieCard';
 import axios from 'axios';
 
-const SearchResults = ({ movies, query, error }) => {
+const SearchResults = ({ movies, query, error, requestPayload, responseData }) => {
   return (
     <div>
       <Head>
@@ -17,11 +17,35 @@ const SearchResults = ({ movies, query, error }) => {
       <main className="container mx-auto px-4 py-8">
         <h1 className="text-4xl font-bold mb-4 text-center">Search Results</h1>
         <SearchBar />
+
+        {/* Code Box: Request Sent to RagCloud */}
+        <div className="mt-8">
+          <h2 className="text-2xl font-semibold mb-2">Request Sent to RagCloud</h2>
+          <pre className="bg-gray-100 p-4 rounded-lg overflow-x-auto">
+            <code className="text-sm text-gray-800">
+              {JSON.stringify(requestPayload, null, 2)}
+            </code>
+          </pre>
+        </div>
+
+        {/* Code Box: Response Received from RagCloud */}
+        <div className="mt-4">
+          <h2 className="text-2xl font-semibold mb-2">Response Received from RagCloud</h2>
+          <pre className="bg-gray-100 p-4 rounded-lg overflow-x-auto">
+            <code className="text-sm text-gray-800">
+              {JSON.stringify(responseData, null, 2)}
+            </code>
+          </pre>
+        </div>
+
+        {/* Display Error if Any */}
         {error && (
-          <p className="text-red-500 text-center mb-4">{error}</p>
+          <p className="text-red-500 text-center mb-4 mt-4">{error}</p>
         )}
+
+        {/* Display Search Results */}
         {movies.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 mt-8">
             {movies.map((movie) => (
               <MovieCard key={movie._id} movie={movie} />
             ))}
@@ -41,7 +65,7 @@ export async function getServerSideProps(context) {
 
   if (!query) {
     return {
-      props: { movies: [], query: '', error: null },
+      props: { movies: [], query: '', error: null, requestPayload: null, responseData: null },
     };
   }
 
@@ -52,7 +76,7 @@ export async function getServerSideProps(context) {
     const db = client.db('movies');
 
     // Prepare data for Local API
-    const searchData = {
+    const requestPayload = {
       dataset: 'Movies',
       data: [
         { keyword: query, weight: 1 },
@@ -66,7 +90,7 @@ export async function getServerSideProps(context) {
     // Call Local API to perform the search
     const ragcloudResponse = await axios.post(
       'http://localhost:3000/api/search',
-      searchData,
+      requestPayload,
       {
         headers: {
           'Content-Type': 'application/json',
@@ -76,6 +100,8 @@ export async function getServerSideProps(context) {
     );
 
     console.log('@@@Local API Response:', ragcloudResponse.data);
+
+    const responseData = ragcloudResponse.data;
 
     let movies = [];
 
@@ -118,7 +144,7 @@ export async function getServerSideProps(context) {
     }
 
     return {
-      props: { movies, query, error: null },
+      props: { movies, query, error: null, requestPayload, responseData },
     };
   } catch (e) {
     console.error('Error fetching search results:', e);
@@ -139,7 +165,7 @@ export async function getServerSideProps(context) {
     }
 
     return {
-      props: { movies: [], query, error: errorMessage },
+      props: { movies: [], query, error: errorMessage, requestPayload: null, responseData: null },
     };
   }
 }

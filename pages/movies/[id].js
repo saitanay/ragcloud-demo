@@ -8,7 +8,7 @@ import Image from 'next/image';
 import { ObjectId } from 'mongodb';
 import clientPromise from '../../lib/mongodb'; // Ensure correct import path
 
-const MovieDetail = ({ movie, similarMovies, error }) => {
+const MovieDetail = ({ movie, similarMovies, error, requestPayload, responseData }) => {
   if (error) {
     return (
       <div className="container mx-auto px-4 py-8">
@@ -52,7 +52,7 @@ const MovieDetail = ({ movie, similarMovies, error }) => {
             <p className="mb-2"><strong>Certificate:</strong> {movie.certificate}</p>
             <p className="mb-2"><strong>Runtime:</strong> {movie.runtime} minutes</p>
             <p className="mb-2"><strong>Genre:</strong> {movie.genre.join(', ')}</p>
-            <p className="mb-2"><strong>IMDB Rating:</strong> {movie.IMDB_Rating}</p>
+            <p className="mb-2"><strong>IMDB Rating:</strong> {movie.imdbRating}</p>
             <p className="mb-2"><strong>Meta Score:</strong> {movie.metaScore}</p>
             <p className="mb-2"><strong>Director:</strong> {movie.director}</p>
             <p className="mb-2"><strong>Stars:</strong> {movie.stars.join(', ')}</p>
@@ -60,6 +60,26 @@ const MovieDetail = ({ movie, similarMovies, error }) => {
             <p className="mb-4"><strong>Gross:</strong> {movie.gross}</p>
             <p className="mb-4"><strong>Overview:</strong> {movie.overview}</p>
           </div>
+        </div>
+
+        {/* Code Box: Request Sent to RagCloud */}
+        <div className="mt-8">
+          <h2 className="text-2xl font-semibold mb-2">Request Sent to RagCloud</h2>
+          <pre className="bg-gray-100 p-4 rounded-lg overflow-x-auto">
+            <code className="text-sm text-gray-800">
+              {JSON.stringify(requestPayload, null, 2)}
+            </code>
+          </pre>
+        </div>
+
+        {/* Code Box: Response Received from RagCloud */}
+        <div className="mt-4">
+          <h2 className="text-2xl font-semibold mb-2">Response Received from RagCloud</h2>
+          <pre className="bg-gray-100 p-4 rounded-lg overflow-x-auto">
+            <code className="text-sm text-gray-800">
+              {JSON.stringify(responseData, null, 2)}
+            </code>
+          </pre>
         </div>
 
         {/* Similar Movies Section */}
@@ -93,7 +113,7 @@ export async function getServerSideProps(context) {
       objectId = new ObjectId(id);
     } catch (error) {
       return {
-        props: { movie: null, similarMovies: [], error: 'Invalid movie ID.' },
+        props: { movie: null, similarMovies: [], error: 'Invalid movie ID.', requestPayload: null, responseData: null },
       };
     }
 
@@ -104,52 +124,31 @@ export async function getServerSideProps(context) {
 
     if (!movie) {
       return {
-        props: { movie: null, similarMovies: [], error: 'Movie not found.' },
+        props: { movie: null, similarMovies: [], error: 'Movie not found.', requestPayload: null, responseData: null },
       };
     }
 
     // Prepare data for Local API
-    const movieData = {
-      "title": movie.seriesTitle,
-      "overview": movie.overview,
-      "genre": Array.isArray(movie.genre) ? movie.genre.join(', ') : movie.genre,
-      "director": movie.director,
-      "stars": Array.isArray(movie.stars) ? movie.stars.join(', ') : movie.stars,
-    };
-
-    console.log('@@@Local API Request Movie Data:', movieData);
-
-    // Log the request payload and headers for debugging
-    console.log('@@@Local API Request Payload:', {
+    const requestPayload = {
       dataset: 'Movies',
       data: [
-        { "movie_name": movieData.title, weight: 3 },
-        { "genre": movieData.genre, weight: 1 },
-        { "director": movieData.director, weight: 2 },
-        { "cast": movieData.stars, weight: 1 },
+        { movie_name: movie.seriesTitle, weight: 3 },
+        { genre: Array.isArray(movie.genre) ? movie.genre.join(', ') : movie.genre, weight: 1 },
+        { director: movie.director, weight: 2 },
+        { cast: Array.isArray(movie.stars) ? movie.stars.join(', ') : movie.stars, weight: 1 },
       ],
       requestedCountOfMatches: 12,
       thresholdMatchScore: 0.5,
       pageNumber: 1,
       pageSize: 12,
-    });
+    };
+
+    console.log('@@@Local API Request Movie Data:', requestPayload);
 
     // Call Local API to get similar movies
     const ragcloudResponse = await axios.post(
       'http://localhost:3000/api/search', // Local API endpoint
-      {
-        dataset: 'Movies',
-        data: [
-          { "movie_name": movieData.title, weight: 3 },
-          { "genre": movieData.genre, weight: 1 },
-          { "director": movieData.director, weight: 2 },
-          { "cast": movieData.stars, weight: 1 },
-        ],
-        requestedCountOfMatches: 12,
-        thresholdMatchScore: 0.5,
-        pageNumber: 1,
-        pageSize: 12,
-      },
+      requestPayload,
       {
         headers: {
           'Content-Type': 'application/json',
@@ -159,6 +158,8 @@ export async function getServerSideProps(context) {
     );
 
     console.log('@@@Local API Response:', ragcloudResponse.data);
+
+    const responseData = ragcloudResponse.data;
 
     let similarMovies = [];
 
@@ -185,7 +186,7 @@ export async function getServerSideProps(context) {
         certificate: movie.certificate || 'Not Rated',
         runtime: movie.runtime || 0,
         genre: movie.genre || [],
-        IMDB_Rating: movie.IMDB_Rating || 0,
+        imdbRating: movie.imdbRating || 0,
         overview: movie.overview || 'No overview available.',
         metaScore: movie.metaScore || 0,
         director: movie.director || 'Unknown',
@@ -207,7 +208,7 @@ export async function getServerSideProps(context) {
       certificate: movie.certificate || 'Not Rated',
       runtime: movie.runtime || 0,
       genre: movie.genre || [],
-      IMDB_Rating: movie.IMDB_Rating || 0,
+      imdbRating: movie.imdbRating || 0,
       overview: movie.overview || 'No overview available.',
       metaScore: movie.metaScore || 0,
       director: movie.director || 'Unknown',
@@ -219,7 +220,7 @@ export async function getServerSideProps(context) {
     console.log('@@@Serialized Movie:', serializedMovie);
 
     return {
-      props: { movie: serializedMovie, similarMovies, error: null },
+      props: { movie: serializedMovie, similarMovies, error: null, requestPayload, responseData },
     };
   } catch (e) {
     console.error('Error fetching movie details:', e);
@@ -240,7 +241,7 @@ export async function getServerSideProps(context) {
     }
 
     return {
-      props: { movie: null, similarMovies: [], error: errorMessage },
+      props: { movie: null, similarMovies: [], error: errorMessage, requestPayload: null, responseData: null },
     };
   }
 }
