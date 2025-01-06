@@ -9,8 +9,8 @@ export default function Home({ movies }) {
   return (
     <div>
       <Head>
-        <title>Movie Listing</title>
-        <meta name="description" content="A movie listing website." />
+        <title>RagCloud Demo - Movie Listing</title>
+        <meta name="description" content="A movie listing website. Demo for RagCloud" />
         <link rel="icon" href="/favicon.ico" />
       </Head>
 

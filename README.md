@@ -1,9 +1,9 @@
 # MovieHub
 
-MovieHub is a modern movie listing and recommendation web application built with
-Next.js. It leverages RagCloud's powerful API to deliver intelligent search and
-personalized movie recommendations, providing users with an enhanced browsing
-experience on both web and mobile platforms.
+RagCloud MovieHub is a movie listing and recommendation web application built
+with Next.js. It leverages RagCloud's powerful API to deliver intelligent search
+and personalized movie recommendations, providing users with an enhanced
+browsing experience on both web and mobile platforms.
 
 ## Table of Contents
 
