@@ -8,13 +8,13 @@ const SearchDbResults = ({ movies, query, error }) => {
   return (
     <div>
       <Head>
-        <title>Search Results for "{query}" (Local DB)</title>
+        <title>Search Results for "{query}" (DB Search)</title>
         <meta name="description" content={`Search results for ${query} from local database`} />
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
       <main className="container mx-auto px-4 py-8">
-        <h1 className="text-4xl font-bold mb-4 text-center">Search Results (Local DB)</h1>
+        <h1 className="text-4xl font-bold mb-4 text-center">Search Results (MongoDB)</h1>
         <SearchBarDb />
 
         {/* Display Error if any */}
