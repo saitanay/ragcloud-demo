@@ -67,38 +67,41 @@ const MovieDetail = ({ movie, similarMovies, error, requestPayload, responseData
         {similarMovies.length > 0 && (
           <div className="mt-12">
             <h2 className="text-2xl font-semibold mb-4">Similar Movies</h2>
+
+
+
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
               {similarMovies.map((similarMovie) => (
                 <MovieCard key={similarMovie._id} movie={similarMovie} />
               ))}
             </div>
+
+
+            {/* Code Box: Request Sent to RagCloud */}
+            {requestPayload && (
+              <div className="mt-8">
+                <h3 className="text-xl font-semibold mb-2">Request Sent to RagCloud</h3>
+                <pre className="bg-gray-100 p-4 rounded-lg overflow-x-auto">
+                  <code className="text-sm text-gray-800">
+                    {JSON.stringify(requestPayload, null, 2)}
+                  </code>
+                </pre>
+              </div>
+            )}
+
+            {/* Code Box: Response Received from RagCloud */}
+            {responseData && (
+              <div className="mt-4">
+                <h3 className="text-xl font-semibold mb-2">Response Received from RagCloud</h3>
+                <pre className="bg-gray-100 p-4 rounded-lg overflow-x-auto">
+                  <code className="text-sm text-gray-800">
+                    {JSON.stringify(responseData, null, 2)}
+                  </code>
+                </pre>
+              </div>
+            )}
           </div>
         )}
-
-        {/* Code Box: Request Sent to RagCloud */}
-        {requestPayload && (
-          <div className="mt-8">
-            <h2 className="text-2xl font-semibold mb-2">Request Sent to RagCloud</h2>
-            <pre className="bg-gray-100 p-4 rounded-lg overflow-x-auto">
-              <code className="text-sm text-gray-800">
-                {JSON.stringify(requestPayload, null, 2)}
-              </code>
-            </pre>
-          </div>
-        )}
-
-        {/* Code Box: Response Received from RagCloud */}
-        {responseData && (
-          <div className="mt-4">
-            <h2 className="text-2xl font-semibold mb-2">Response Received from RagCloud</h2>
-            <pre className="bg-gray-100 p-4 rounded-lg overflow-x-auto">
-              <code className="text-sm text-gray-800">
-                {JSON.stringify(responseData, null, 2)}
-              </code>
-            </pre>
-          </div>
-        )}
-
       </main>
     </div>
   );
@@ -143,17 +146,20 @@ export async function getServerSideProps(context) {
         { director: movie.director, weight: 2 },
         { cast: Array.isArray(movie.stars) ? movie.stars.join(', ') : movie.stars, weight: 1 },
       ],
-      requestedCountOfMatches: 12,
+      requestedCountOfMatches: 13,
       thresholdMatchScore: 0.5,
       pageNumber: 1,
-      pageSize: 12,
+      pageSize: 13,
     };
 
     console.log('@@@Local API Request Movie Data:', requestPayload);
 
+    let base_url = process.env.RAGCLOUD_API_BASE_URL || "https://ragcloud.io";
+    console.log('@@@Base URL:', base_url);
+
     // Call Local API to get similar movies
     const ragcloudResponse = await axios.post(
-      'http://localhost:3000/api/search', // Local API endpoint
+      `${base_url}/api/search`,
       requestPayload,
       {
         headers: {
@@ -174,35 +180,45 @@ export async function getServerSideProps(context) {
 
       console.log('@@@Similar Movie IDs:', similarMovieIds);
 
-      // Fetch similar movies from MongoDB using the 'id' field
-      similarMovies = await db
+      // Fetch similar movies from MongoDB using the 'id' field, exclude the current movie
+      const fetchedMovies = await db
         .collection('movies')
-        .find({ id: { $in: similarMovieIds } })
+        .find({ id: { $in: similarMovieIds, $ne: movie.id } })
         .toArray();
 
-      console.log('@@@Similar Movies:', similarMovies);
 
-      // Serialize similarMovies
-      similarMovies = similarMovies.map((movie) => ({
-        ...movie,
-        _id: movie._id.toString(),
-        posterLink: movie.posterLink || '/default-poster.jpg',
-        seriesTitle: movie.seriesTitle || 'Untitled',
-        releasedYear: movie.releasedYear || 'Unknown',
-        certificate: movie.certificate || 'Not Rated',
-        runtime: movie.runtime || 0,
-        genre: movie.genre || [],
-        imdbRating: movie.IMDB_Rating || 0,
-        overview: movie.overview || 'No overview available.',
-        metaScore: movie.metaScore || 0,
-        director: movie.director || 'Unknown',
-        stars: movie.stars || [],
-        noOfVotes: movie.noOfVotes || 0,
-        gross: movie.gross || 'N/A',
-      }));
+      console.log('@@@Fetched Similar Movies:', fetchedMovies);
+
+      // Create a map for quick lookup
+      const movieMap = new Map();
+      fetchedMovies.forEach((movie) => {
+        movieMap.set(movie.id, movie);
+      });
+
+      // Order the similarMovies according to similarMovieIds
+      similarMovies = similarMovieIds
+        .map((id) => movieMap.get(id))
+        .filter(Boolean) // Remove undefined if any id not found
+        .map((movie) => ({
+          ...movie,
+          _id: movie._id.toString(),
+          posterLink: movie.posterLink || '/default-poster.jpg',
+          seriesTitle: movie.seriesTitle || 'Untitled',
+          releasedYear: movie.releasedYear || 'Unknown',
+          certificate: movie.certificate || 'Not Rated',
+          runtime: movie.runtime || 0,
+          genre: movie.genre || [],
+          imdbRating: movie.IMDB_Rating || 0,
+          overview: movie.overview || 'No overview available.',
+          metaScore: movie.metaScore || 0,
+          director: movie.director || 'Unknown',
+          stars: movie.stars || [],
+          noOfVotes: movie.noOfVotes || 0,
+          gross: movie.gross || 'N/A',
+        }));
+
+      console.log('@@@Ordered Similar Movies:', similarMovies);
     }
-
-    console.log('@@@Similar Movies 2:', similarMovies);
 
     // Serialize the main movie
     const serializedMovie = {

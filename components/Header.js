@@ -23,10 +23,7 @@ const Header = () => {
             </Link>
           </nav>
         </div>
-        {/* Include SearchBar in Header */}
-        <div className="mt-4 md:mt-0 w-full md:w-auto">
-          <SearchBar />
-        </div>
+
       </div>
     </header>
   );

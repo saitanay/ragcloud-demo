@@ -18,7 +18,6 @@ const SearchResults = ({ movies, query, error, requestPayload, responseData }) =
         <h1 className="text-4xl font-bold mb-4 text-center">Search Results</h1>
         <SearchBar />
 
-
         {/* Display Error if Any */}
         {error && (
           <p className="text-red-500 text-center mb-4 mt-4">{error}</p>
@@ -34,7 +33,6 @@ const SearchResults = ({ movies, query, error, requestPayload, responseData }) =
         ) : (
           <p className="text-center mt-8">No movies found matching your search.</p>
         )}
-
 
         {/* Code Box: Request Sent to RagCloud */}
         {requestPayload && (
@@ -93,9 +91,14 @@ export async function getServerSideProps(context) {
       pageSize: 12,
     };
 
+    console.log('@@@Local API Request Payload:', requestPayload);
+
+    let base_url = process.env.RAGCLOUD_API_BASE_URL || "https://ragcloud.io";
+    console.log('@@@Base URL:', base_url);
+
     // Call Local API to perform the search
     const ragcloudResponse = await axios.post(
-      'http://localhost:3000/api/search',
+      `${base_url}/api/search`,
       requestPayload,
       {
         headers: {
@@ -120,33 +123,42 @@ export async function getServerSideProps(context) {
       console.log('@@@Similar Movie IDs:', similarMovieIds);
 
       // Fetch similar movies from MongoDB using the 'id' field
-      movies = await db
+      const fetchedMovies = await db
         .collection('movies')
         .find({ id: { $in: similarMovieIds } })
         .toArray();
 
-      console.log('@@@Similar Movies:', movies);
+      console.log('@@@Fetched Similar Movies:', fetchedMovies);
 
-      // Serialize movies
-      movies = movies.map((movie) => ({
-        ...movie,
-        _id: movie._id.toString(),
-        posterLink: movie.posterLink || '/default-poster.jpg',
-        seriesTitle: movie.seriesTitle || 'Untitled',
-        releasedYear: movie.releasedYear || 'Unknown',
-        certificate: movie.certificate || 'Not Rated',
-        runtime: movie.runtime || 0,
-        genre: movie.genre || [],
-        IMDB_Rating: movie.IMDB_Rating || 0,
-        overview: movie.overview || 'No overview available.',
-        metaScore: movie.metaScore || 0,
-        director: movie.director || 'Unknown',
-        stars: movie.stars || [],
-        noOfVotes: movie.noOfVotes || 0,
-        gross: movie.gross || 'N/A',
-      }));
+      // Create a map for quick lookup
+      const movieMap = new Map();
+      fetchedMovies.forEach((movie) => {
+        movieMap.set(movie.id, movie);
+      });
 
-      console.log('@@@Serialized Movies:', movies);
+      // Order the movies based on similarMovieIds
+      movies = similarMovieIds
+        .map((id) => movieMap.get(id))
+        .filter(Boolean) // Remove undefined if any id not found
+        .map((movie) => ({
+          ...movie,
+          _id: movie._id.toString(),
+          posterLink: movie.posterLink || '/default-poster.jpg',
+          seriesTitle: movie.seriesTitle || 'Untitled',
+          releasedYear: movie.releasedYear || 'Unknown',
+          certificate: movie.certificate || 'Not Rated',
+          runtime: movie.runtime || 0,
+          genre: movie.genre || [],
+          IMDB_Rating: movie.IMDB_Rating || 0,
+          overview: movie.overview || 'No overview available.',
+          metaScore: movie.metaScore || 0,
+          director: movie.director || 'Unknown',
+          stars: movie.stars || [],
+          noOfVotes: movie.noOfVotes || 0,
+          gross: movie.gross || 'N/A',
+        }));
+
+      console.log('@@@Ordered Similar Movies:', movies);
     }
 
     return {
