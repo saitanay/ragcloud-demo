@@ -23,9 +23,18 @@ const Header = () => {
             </Link>
           </nav>
         </div>
+        <a
+          href="https://github.com/saitanay/ragcloud-demo" // Replace with your actual source code URL
+          target="_blank"
+          rel="noopener noreferrer"
+          className="bg-green-600 text-white px-6 py-4 rounded-lg hover:bg-green-700 transition text-lg font-semibold inline-block mx-2"
+        >
+          View Source Code
+        </a>
+
 
       </div>
-    </header>
+    </header >
   );
 };
 
