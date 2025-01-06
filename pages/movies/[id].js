@@ -158,7 +158,7 @@ export async function getServerSideProps(context) {
       }
     );
 
-    console.log('@@@Local API Response:', ragcloudResponse.data);
+    console.log('@@@Local API Response for similar movies:', ragcloudResponse.data);
 
     let similarMovies = [];
 
