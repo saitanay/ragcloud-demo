@@ -1,11 +1,9 @@
 // pages/search.js
 
 import Head from 'next/head';
-import clientPromise from '../lib/mongodb';
-import MovieCard from '../components/MovieCard';
 import SearchBar from '../components/SearchBar';
+import MovieCard from '../components/MovieCard';
 import axios from 'axios';
-import { ObjectId } from 'mongodb';
 
 const SearchResults = ({ movies, query, error }) => {
   return (
@@ -48,17 +46,16 @@ export async function getServerSideProps(context) {
   }
 
   try {
+    // Dynamically import clientPromise to ensure it's only used server-side
+    const { default: clientPromise } = await import('../lib/mongodb');
     const client = await clientPromise;
-    const db = client.db('movies'); // Updated to 'movies' database
+    const db = client.db('movies');
 
     // Prepare data for Local API
     const searchData = {
       dataset: 'Movies',
       data: [
-        { movie_name: query, weight: 3 },
-        { genre: query, weight: 1 },
-        { director: query, weight: 2 },
-        { cast: query, weight: 1 },
+        { keyword: query, weight: 1 },
       ],
       requestedCountOfMatches: 12,
       thresholdMatchScore: 0.5,
@@ -66,43 +63,37 @@ export async function getServerSideProps(context) {
       pageSize: 12,
     };
 
-    // Log the request payload and headers for debugging
-    console.log('Local API Search Request Payload:', searchData);
-
     // Call Local API to perform the search
     const ragcloudResponse = await axios.post(
-      'http://localhost:3000/api/search', // Updated to local API endpoint
+      'http://localhost:3000/api/search',
       searchData,
       {
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer ' + process.env.RAGCLOUD_API_KEY,
+          'Authorization': 'Bearer ' + process.env.RAGCLOUD_API_KEY, // Uncomment if required
         },
       }
     );
 
+    console.log('@@@Local API Response:', ragcloudResponse.data);
+
     let movies = [];
 
-    if (ragcloudResponse.data.success && ragcloudResponse.data.results) {
-      const movieIds = ragcloudResponse.data.results.map((result) => result.recordId);
+    // Check if the API response contains matchedRecordsWithScore
+    if (ragcloudResponse.data.matchedRecordsWithScore) {
+      const similarMovieIds = ragcloudResponse.data.matchedRecordsWithScore.map(
+        (result) => result.data.id
+      );
 
-      // Convert string IDs to ObjectId
-      const objectSimilarIds = movieIds
-        .map((id) => {
-          try {
-            return new ObjectId(id);
-          } catch (error) {
-            console.warn(`Invalid movie ID: ${id}`);
-            return null;
-          }
-        })
-        .filter(Boolean); // Remove nulls
+      console.log('@@@Similar Movie IDs:', similarMovieIds);
 
-      // Fetch movies from MongoDB using the IDs
+      // Fetch similar movies from MongoDB using the 'id' field
       movies = await db
         .collection('movies')
-        .find({ _id: { $in: objectSimilarIds } })
+        .find({ id: { $in: similarMovieIds } })
         .toArray();
+
+      console.log('@@@Similar Movies:', movies);
 
       // Serialize movies
       movies = movies.map((movie) => ({
@@ -122,6 +113,8 @@ export async function getServerSideProps(context) {
         noOfVotes: movie.noOfVotes || 0,
         gross: movie.gross || 'N/A',
       }));
+
+      console.log('@@@Serialized Movies:', movies);
     }
 
     return {

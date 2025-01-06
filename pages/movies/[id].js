@@ -1,12 +1,12 @@
 // pages/movies/[id].js
 
 import Head from 'next/head';
-import clientPromise from '../../lib/mongodb';
 import SearchBar from '../../components/SearchBar';
 import MovieCard from '../../components/MovieCard';
 import axios from 'axios';
 import Image from 'next/image';
 import { ObjectId } from 'mongodb';
+import clientPromise from '../../lib/mongodb'; // Ensure correct import path
 
 const MovieDetail = ({ movie, similarMovies, error }) => {
   if (error) {
@@ -85,7 +85,7 @@ export async function getServerSideProps(context) {
 
   try {
     const client = await clientPromise;
-    const db = client.db('movies'); // Updated to 'movies' database
+    const db = client.db('movies'); // Ensure 'movies' is the correct DB name
 
     // Validate and convert the id to ObjectId
     let objectId;
@@ -97,7 +97,7 @@ export async function getServerSideProps(context) {
       };
     }
 
-    // Fetch the movie details from MongoDB
+    // Fetch the movie details from MongoDB using _id
     const movie = await db.collection('movies').findOne({ _id: objectId });
 
     console.log('@@@Movie:', movie);
@@ -117,7 +117,7 @@ export async function getServerSideProps(context) {
       "stars": Array.isArray(movie.stars) ? movie.stars.join(', ') : movie.stars,
     };
 
-    console.log('@@@Local API Request Movie Data:', movieData)
+    console.log('@@@Local API Request Movie Data:', movieData);
 
     // Log the request payload and headers for debugging
     console.log('@@@Local API Request Payload:', {
@@ -136,7 +136,7 @@ export async function getServerSideProps(context) {
 
     // Call Local API to get similar movies
     const ragcloudResponse = await axios.post(
-      'http://localhost:3000/api/search', // Updated to local API endpoint
+      'http://localhost:3000/api/search', // Local API endpoint
       {
         dataset: 'Movies',
         data: [
@@ -153,35 +153,27 @@ export async function getServerSideProps(context) {
       {
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer ' + process.env.RAGCLOUD_API_KEY,
+          'Authorization': 'Bearer ' + process.env.RAGCLOUD_API_KEY, // Uncomment if required
         },
       }
     );
 
-    console.log('@@@Local API Response for similar movies:', ragcloudResponse.data);
+    console.log('@@@Local API Response:', ragcloudResponse.data);
 
     let similarMovies = [];
 
-    if (ragcloudResponse.data.success && ragcloudResponse.data.results) {
-      const similarMovieIds = ragcloudResponse.data.results.map((result) => result.recordId);
+    if (ragcloudResponse.data.matchedRecordsWithScore) {
+      const similarMovieIds = ragcloudResponse.data.matchedRecordsWithScore.map((result) => result.data.id);
 
-      // Convert string IDs to ObjectId
-      const objectSimilarIds = similarMovieIds
-        .map((id) => {
-          try {
-            return new ObjectId(id);
-          } catch (error) {
-            console.warn(`Invalid similar movie ID: ${id}`);
-            return null;
-          }
-        })
-        .filter(Boolean); // Remove nulls
+      console.log('@@@Similar Movie IDs:', similarMovieIds);
 
-      // Fetch similar movies from MongoDB using their IDs
+      // Fetch similar movies from MongoDB using the 'id' field
       similarMovies = await db
         .collection('movies')
-        .find({ _id: { $in: objectSimilarIds } })
+        .find({ id: { $in: similarMovieIds } })
         .toArray();
+
+      console.log('@@@Similar Movies:', similarMovies);
 
       // Serialize similarMovies
       similarMovies = similarMovies.map((movie) => ({
@@ -203,6 +195,8 @@ export async function getServerSideProps(context) {
       }));
     }
 
+    console.log('@@@Similar Movies 2:', similarMovies);
+
     // Serialize the main movie
     const serializedMovie = {
       ...movie,
@@ -221,6 +215,8 @@ export async function getServerSideProps(context) {
       noOfVotes: movie.noOfVotes || 0,
       gross: movie.gross || 'N/A',
     };
+
+    console.log('@@@Serialized Movie:', serializedMovie);
 
     return {
       props: { movie: serializedMovie, similarMovies, error: null },
