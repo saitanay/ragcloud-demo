@@ -19,7 +19,10 @@ const Header = () => {
               <a className={`hover:text-gray-400 ${router.pathname === '/' ? 'text-gray-400' : ''}`}>Home</a>
             </Link>
             <Link legacyBehavior href="/search">
-              <a className={`hover:text-gray-400 ${router.pathname === '/search' ? 'text-gray-400' : ''}`}>Search</a>
+              <a className={`hover:text-gray-400 ${router.pathname === '/search' ? 'text-gray-400' : ''}`}>Search (RagCloud)</a>
+            </Link>
+            <Link legacyBehavior href="/search-db">
+              <a className={`hover:text-gray-400 ${router.pathname === '/search' ? 'text-gray-400' : ''}`}>Search (Database)</a>
             </Link>
           </nav>
         </div>

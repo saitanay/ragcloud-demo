@@ -1,21 +1,28 @@
-// components/MovieCard.js
-
 import Link from 'next/link';
 import Image from 'next/image';
+import { useState } from 'react';
 
 const MovieCard = ({ movie }) => {
+  const [imageError, setImageError] = useState(false);
+
+  const handleImageError = () => {
+    setImageError(true);
+  };
+
   return (
     <div className="border rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300">
       <Link href={`/movies/${movie._id}`} legacyBehavior>
         <a className="block">
           <div className="flex justify-center p-4">
             <Image
-              src={movie.posterLink || '/default-poster.jpg'}
+              src={imageError ? '/public_default-poster.jpg' : movie.posterLink}
               alt={movie.seriesTitle}
               width={200}
               height={300}
-              objectFit="cover"
+              onError={handleImageError}
               className="max-w-[120px] h-auto mx-auto transition-transform duration-300 ease-in-out transform hover:scale-105"
+              priority={false}
+              quality={75}
             />
           </div>
           <div className="p-4 text-center">
