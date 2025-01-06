@@ -1,6 +1,7 @@
 // components/Layout.js
 
 import Header from './Header';
+import Footer from './Footer'; // Ensure Footer.js exists if you want to include it
 
 const Layout = ({ children }) => {
   return (
@@ -9,7 +10,7 @@ const Layout = ({ children }) => {
       <main className="flex-grow">
         {children}
       </main>
-      {/* Optional: Add a Footer here if needed */}
+      {/* <Footer /> Uncomment if Footer.js is created */}
     </div>
   );
 };

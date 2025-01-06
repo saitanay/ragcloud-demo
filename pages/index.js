@@ -18,7 +18,7 @@ export default function Home({ movies }) {
         <h1 className="text-4xl font-bold mb-4 text-center">Movie Listing</h1>
         <SearchBar />
         {movies.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 mt-8">
             {movies.map((movie) => (
               <MovieCard key={movie._id} movie={movie} />
             ))}

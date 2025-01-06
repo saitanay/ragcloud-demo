@@ -52,7 +52,7 @@ const MovieDetail = ({ movie, similarMovies, error, requestPayload, responseData
             <p className="mb-2"><strong>Certificate:</strong> {movie.certificate}</p>
             <p className="mb-2"><strong>Runtime:</strong> {movie.runtime} minutes</p>
             <p className="mb-2"><strong>Genre:</strong> {movie.genre.join(', ')}</p>
-            <p className="mb-2"><strong>IMDB Rating:</strong> {movie.imdbRating}</p>
+            <p className="mb-2"><strong>IMDB Rating:</strong> {movie.IMDB_Rating}</p>
             <p className="mb-2"><strong>Meta Score:</strong> {movie.metaScore}</p>
             <p className="mb-2"><strong>Director:</strong> {movie.director}</p>
             <p className="mb-2"><strong>Stars:</strong> {movie.stars.join(', ')}</p>
@@ -62,25 +62,6 @@ const MovieDetail = ({ movie, similarMovies, error, requestPayload, responseData
           </div>
         </div>
 
-        {/* Code Box: Request Sent to RagCloud */}
-        <div className="mt-8">
-          <h2 className="text-2xl font-semibold mb-2">Request Sent to RagCloud</h2>
-          <pre className="bg-gray-100 p-4 rounded-lg overflow-x-auto">
-            <code className="text-sm text-gray-800">
-              {JSON.stringify(requestPayload, null, 2)}
-            </code>
-          </pre>
-        </div>
-
-        {/* Code Box: Response Received from RagCloud */}
-        <div className="mt-4">
-          <h2 className="text-2xl font-semibold mb-2">Response Received from RagCloud</h2>
-          <pre className="bg-gray-100 p-4 rounded-lg overflow-x-auto">
-            <code className="text-sm text-gray-800">
-              {JSON.stringify(responseData, null, 2)}
-            </code>
-          </pre>
-        </div>
 
         {/* Similar Movies Section */}
         {similarMovies.length > 0 && (
@@ -93,6 +74,31 @@ const MovieDetail = ({ movie, similarMovies, error, requestPayload, responseData
             </div>
           </div>
         )}
+
+        {/* Code Box: Request Sent to RagCloud */}
+        {requestPayload && (
+          <div className="mt-8">
+            <h2 className="text-2xl font-semibold mb-2">Request Sent to RagCloud</h2>
+            <pre className="bg-gray-100 p-4 rounded-lg overflow-x-auto">
+              <code className="text-sm text-gray-800">
+                {JSON.stringify(requestPayload, null, 2)}
+              </code>
+            </pre>
+          </div>
+        )}
+
+        {/* Code Box: Response Received from RagCloud */}
+        {responseData && (
+          <div className="mt-4">
+            <h2 className="text-2xl font-semibold mb-2">Response Received from RagCloud</h2>
+            <pre className="bg-gray-100 p-4 rounded-lg overflow-x-auto">
+              <code className="text-sm text-gray-800">
+                {JSON.stringify(responseData, null, 2)}
+              </code>
+            </pre>
+          </div>
+        )}
+
       </main>
     </div>
   );
@@ -186,7 +192,7 @@ export async function getServerSideProps(context) {
         certificate: movie.certificate || 'Not Rated',
         runtime: movie.runtime || 0,
         genre: movie.genre || [],
-        imdbRating: movie.imdbRating || 0,
+        imdbRating: movie.IMDB_Rating || 0,
         overview: movie.overview || 'No overview available.',
         metaScore: movie.metaScore || 0,
         director: movie.director || 'Unknown',
@@ -208,7 +214,7 @@ export async function getServerSideProps(context) {
       certificate: movie.certificate || 'Not Rated',
       runtime: movie.runtime || 0,
       genre: movie.genre || [],
-      imdbRating: movie.imdbRating || 0,
+      imdbRating: movie.IMDB_Rating || 0,
       overview: movie.overview || 'No overview available.',
       metaScore: movie.metaScore || 0,
       director: movie.director || 'Unknown',
