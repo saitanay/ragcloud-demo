@@ -53,16 +53,24 @@ export async function getServerSideProps(context) {
     const client = await clientPromise;
     const db = client.db('movies');
 
+    // Split the query into keywords
+    const queryWords = query.split(/\s+/).filter((word) => word.trim() !== '');
+
+    // Build regex match conditions for each keyword
+    const regexConditions = queryWords.map((word) => ({
+      $or: [
+        { seriesTitle: { $regex: word, $options: 'i' } },
+        { director: { $regex: word, $options: 'i' } },
+        { stars: { $regex: word, $options: 'i' } },
+        { overview: { $regex: word, $options: 'i' } },
+      ],
+    }));
+
     // Search pipeline
     const pipeline = [
       {
         $match: {
-          $or: [
-            { seriesTitle: { $regex: query, $options: 'i' } },
-            { director: { $regex: query, $options: 'i' } },
-            { stars: { $regex: query, $options: 'i' } },
-            { overview: { $regex: query, $options: 'i' } },
-          ],
+          $or: regexConditions, // Match any of the keywords in any field
         },
       },
       { $limit: 12 }, // Adjust limit as needed
