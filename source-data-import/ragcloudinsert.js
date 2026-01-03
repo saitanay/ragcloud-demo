@@ -17,8 +17,8 @@ const MAX_ENTRIES = 1000; // Set this to the desired maximum number of records
 const API_ENDPOINT = 'https://ragcloud.io/api/addDataRecord'; // Corrected endpoint
 
 
-const API_KEY = process.env.RAGCLOUD_API_KEY || '????'; // Preferably use environment variables
-const DATASET_NAME = 'Movies';
+const API_KEY = process.env.RAGCLOUD_API_KEY || 'JVF5OvTbluQVdyJAT3EsbyDSk0vIMJNU';
+const DATASET_NAME = 'Movies Implementation 2';
 
 // Path to the CSV file
 const csvFilePath = path.join(__dirname, 'movies.csv');

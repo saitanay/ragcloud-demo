@@ -73,40 +73,41 @@ const Header = () => {
         <nav className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4 px-4">
           <Link legacyBehavior href="/">
             <a
-              className={`hover:text-gray-400 ${router.pathname === '/' ? 'text-gray-400' : ''
-                }`}
+              className={`px-3 py-1 rounded transition-colors ${
+                router.pathname === '/' 
+                  ? 'bg-green-600 text-white font-semibold' 
+                  : 'hover:text-green-400'
+              }`}
             >
               Home
             </a>
           </Link>
           <Link legacyBehavior href="/search">
             <a
-              className={`hover:text-gray-400 ${router.pathname === '/search' ? 'text-gray-400' : ''
-                }`}
+              className={`px-3 py-1 rounded transition-colors ${
+                router.pathname === '/search' 
+                  ? 'bg-green-600 text-white font-semibold' 
+                  : 'hover:text-green-400'
+              }`}
             >
               Search (RagCloud)
             </a>
           </Link>
           <Link legacyBehavior href="/search-db">
             <a
-              className={`hover:text-gray-400 ${router.pathname === '/search-db' ? 'text-gray-400' : ''
-                }`}
+              className={`px-3 py-1 rounded transition-colors ${
+                router.pathname === '/search-db' 
+                  ? 'bg-green-600 text-white font-semibold' 
+                  : 'hover:text-green-400'
+              }`}
             >
-              Search (Database)
+              Search (MongoDB)
             </a>
           </Link>
         </nav>
 
         {/* Buttons */}
         <div className="mt-4 sm:mt-0 flex flex-col sm:flex-row items-start sm:items-center px-4 space-y-2 sm:space-y-0 sm:space-x-2">
-          <a
-            href="https://github.com/saitanay/ragcloud-demo"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition text-md font-semibold inline-block"
-          >
-            View Source Code
-          </a>
           <a
             href="https://www.kaggle.com/datasets/harshitshankhdhar/imdb-dataset-of-top-1000-movies-and-tv-shows"
             target="_blank"

@@ -5,7 +5,7 @@ import SearchBar from '../components/SearchBar';
 import MovieCard from '../components/MovieCard';
 import axios from 'axios';
 
-const SearchResults = ({ movies, query, error, requestPayload, responseData }) => {
+const SearchResults = ({ movies, query, error }) => {
   return (
     <div>
       <Head>
@@ -33,30 +33,6 @@ const SearchResults = ({ movies, query, error, requestPayload, responseData }) =
         ) : (
           <p className="text-center mt-8">No movies found matching your search.</p>
         )}
-
-        {/* Code Box: Request Sent to RagCloud */}
-        {requestPayload && (
-          <div className="mt-8">
-            <h2 className="text-2xl font-semibold mb-2">Request Sent to RagCloud</h2>
-            <pre className="bg-gray-100 p-4 rounded-lg overflow-x-auto">
-              <code className="text-sm text-gray-800">
-                {JSON.stringify(requestPayload, null, 2)}
-              </code>
-            </pre>
-          </div>
-        )}
-
-        {/* Code Box: Response Received from RagCloud */}
-        {responseData && (
-          <div className="mt-4">
-            <h2 className="text-2xl font-semibold mb-2">Response Received from RagCloud</h2>
-            <pre className="bg-gray-100 p-4 rounded-lg overflow-x-auto">
-              <code className="text-sm text-gray-800">
-                {JSON.stringify(responseData, null, 2)}
-              </code>
-            </pre>
-          </div>
-        )}
       </main>
     </div>
   );
@@ -69,7 +45,7 @@ export async function getServerSideProps(context) {
 
   if (!query) {
     return {
-      props: { movies: [], query: '', error: null, requestPayload: null, responseData: null },
+      props: { movies: [], query: '', error: null },
     };
   }
 
@@ -81,7 +57,7 @@ export async function getServerSideProps(context) {
 
     // Prepare data for Local API
     const requestPayload = {
-      dataset: 'Movies',
+      dataset: 'Movies Implementation 2',
       data: [
         { keyword: query, weight: 1 },
       ],
@@ -162,7 +138,7 @@ export async function getServerSideProps(context) {
     }
 
     return {
-      props: { movies, query, error: null, requestPayload, responseData },
+      props: { movies, query, error: null },
     };
   } catch (e) {
     console.error('Error fetching search results:', e);
@@ -183,7 +159,7 @@ export async function getServerSideProps(context) {
     }
 
     return {
-      props: { movies: [], query, error: errorMessage, requestPayload: null, responseData: null },
+      props: { movies: [], query, error: errorMessage },
     };
   }
 }

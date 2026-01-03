@@ -5,10 +5,17 @@ import SearchBar from '../../components/SearchBar';
 import MovieCard from '../../components/MovieCard';
 import axios from 'axios';
 import Image from 'next/image';
+import { useState } from 'react';
 import { ObjectId } from 'mongodb';
 import clientPromise from '../../lib/mongodb'; // Ensure correct import path
 
-const MovieDetail = ({ movie, similarMovies, error, requestPayload, responseData }) => {
+const MovieDetail = ({ movie, similarMovies, error }) => {
+  const [imageError, setImageError] = useState(false);
+
+  const handleImageError = () => {
+    setImageError(true);
+  };
+
   if (error) {
     return (
       <div className="container mx-auto px-4 py-8">
@@ -38,12 +45,12 @@ const MovieDetail = ({ movie, similarMovies, error, requestPayload, responseData
         <div className="flex flex-col md:flex-row">
           <div className="md:w-1/3">
             <Image
-              src={movie.posterLink || '/default-poster.jpg'}
+              src={imageError ? '/public_default-poster.jpg' : (movie.posterLink || '/public_default-poster.jpg')}
               alt={movie.seriesTitle}
               width={300}
               height={450}
-              objectFit="cover"
-              className="rounded-lg shadow-md"
+              onError={handleImageError}
+              className="rounded-lg shadow-md object-cover"
             />
           </div>
           <div className="md:w-2/3 md:pl-8">
@@ -75,31 +82,6 @@ const MovieDetail = ({ movie, similarMovies, error, requestPayload, responseData
                 <MovieCard key={similarMovie._id} movie={similarMovie} />
               ))}
             </div>
-
-
-            {/* Code Box: Request Sent to RagCloud */}
-            {requestPayload && (
-              <div className="mt-8">
-                <h3 className="text-xl font-semibold mb-2">Request Sent to RagCloud</h3>
-                <pre className="bg-gray-100 p-4 rounded-lg overflow-x-auto">
-                  <code className="text-sm text-gray-800">
-                    {JSON.stringify(requestPayload, null, 2)}
-                  </code>
-                </pre>
-              </div>
-            )}
-
-            {/* Code Box: Response Received from RagCloud */}
-            {responseData && (
-              <div className="mt-4">
-                <h3 className="text-xl font-semibold mb-2">Response Received from RagCloud</h3>
-                <pre className="bg-gray-100 p-4 rounded-lg overflow-x-auto">
-                  <code className="text-sm text-gray-800">
-                    {JSON.stringify(responseData, null, 2)}
-                  </code>
-                </pre>
-              </div>
-            )}
           </div>
         )}
       </main>
@@ -122,7 +104,7 @@ export async function getServerSideProps(context) {
       objectId = new ObjectId(id);
     } catch (error) {
       return {
-        props: { movie: null, similarMovies: [], error: 'Invalid movie ID.', requestPayload: null, responseData: null },
+        props: { movie: null, similarMovies: [], error: 'Invalid movie ID.' },
       };
     }
 
@@ -133,13 +115,13 @@ export async function getServerSideProps(context) {
 
     if (!movie) {
       return {
-        props: { movie: null, similarMovies: [], error: 'Movie not found.', requestPayload: null, responseData: null },
+        props: { movie: null, similarMovies: [], error: 'Movie not found.' },
       };
     }
 
     // Prepare data for Local API
     const requestPayload = {
-      dataset: 'Movies',
+      dataset: 'Movies Implementation 2',
       data: [
         { movie_name: movie.seriesTitle, weight: 3 },
         { genre: Array.isArray(movie.genre) ? movie.genre.join(', ') : movie.genre, weight: 1 },
@@ -242,7 +224,7 @@ export async function getServerSideProps(context) {
     console.log('@@@Serialized Movie:', serializedMovie);
 
     return {
-      props: { movie: serializedMovie, similarMovies, error: null, requestPayload, responseData },
+      props: { movie: serializedMovie, similarMovies, error: null },
     };
   } catch (e) {
     console.error('Error fetching movie details:', e);
@@ -263,7 +245,7 @@ export async function getServerSideProps(context) {
     }
 
     return {
-      props: { movie: null, similarMovies: [], error: errorMessage, requestPayload: null, responseData: null },
+      props: { movie: null, similarMovies: [], error: errorMessage },
     };
   }
 }
